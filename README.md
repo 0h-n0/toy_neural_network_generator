@@ -13,7 +13,7 @@ import torchex.nn as exnn
 from tnng import Generator, MultiHeadLinkedListLayer
 
 m = MultiHeadLinkedListLayer()
-# all layers can be lazy evaluation.
+# All layers can be evaluated with lazy style.
 m.append([exnn.Linear(64), exnn.Linear(128), exnn.Linear(256)])
 m.append([nn.ReLU(), nn.ELU()])
 m.append([exnn.Linear(16), exnn.Linear(32), exnn.Linear(64),])
