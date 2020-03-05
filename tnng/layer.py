@@ -29,14 +29,14 @@ class Layer:
 
 
 class MultiHeadLinkedListLayer:
-    def __init__(self, head=None, length: int = 1):
+    def __init__(self, head=None, depth: int = 1):
         if head is None:
             self.head = Layer()
         else:
             self.head = head
         self.tail = self.head
         self._immutable = False
-        self.length = length
+        self.depth = depth
 
     def _set_immutable(self):
         self._immutable = True
@@ -45,7 +45,7 @@ class MultiHeadLinkedListLayer:
         if self._immutable:
             print("can't append layer")
             return self
-        self.length += 1
+        self.depth += 1
         new = Layer(layers)
         self.tail.child = new
         new.parent = [self.tail,]
@@ -59,17 +59,17 @@ class MultiHeadLinkedListLayer:
         concat_layer.parent = [self.tail, other.tail]
         self._set_immutable()
         other._set_immutable()
-        if self.length > other.length:
-            _length = self.length
+        if self.depth > other.depth:
+            _depth = self.depth
         else:
-            _length = other.length
-        _length += 1 # for concat layer
-        return MultiHeadLinkedListLayer(concat_layer, _length)
+            _depth = other.depth
+        _depth += 1 # for concat layer
+        return MultiHeadLinkedListLayer(concat_layer, _depth)
 
     def __str__(self):
         out = ""
         cur = [self.tail,]
-        for _ in range(self.length):
+        for _ in range(self.depth):
             parents = []
             out += f"{cur}\n"
             for c in cur:
@@ -82,10 +82,10 @@ class MultiHeadLinkedListLayer:
         return out
 
     def __rper__(self):
-        return f"MultiHeadLinkedListLayer({self.length})"
+        return f"MultiHeadLinkedListLayer({self.depth})"
 
     def __len__(self):
-        return self.length
+        return self.depth
 
 if __name__ == "__main__":
     def f1():
