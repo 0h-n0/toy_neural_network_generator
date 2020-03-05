@@ -64,6 +64,7 @@ class MultiHeadLinkedListLayer:
         else:
             _depth = other.depth
         _depth += 1 # for concat layer
+
         return MultiHeadLinkedListLayer(concat_layer, _depth)
 
     def __str__(self):
@@ -86,25 +87,3 @@ class MultiHeadLinkedListLayer:
 
     def __len__(self):
         return self.depth
-
-if __name__ == "__main__":
-    def f1():
-        pass
-    def f2():
-        pass
-    def f3():
-        pass
-    def f4():
-        pass
-    m1 = MultiHeadLinkedListLayer()
-    m2 = MultiHeadLinkedListLayer()
-    m3 = MultiHeadLinkedListLayer()
-    m3.append([f1])
-    m1.append([f1])
-    m1.append([f2])
-    m1.append([f3])
-    m1.append([f4])
-    m = m1 + m3
-    m = m + m
-    print(m)
-    # m.append([f])

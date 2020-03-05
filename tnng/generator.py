@@ -15,8 +15,9 @@ class Generator:
             parents = []
             _each_layer_num_parents = []
             for c in cur:
-                if c is None or c.parent is None:
+                if  c is None or c.parent is None:
                     parents.append(None)
+                    _each_layer_num_parents.append(1)
                     continue
                 for p in c.parent:
                     parents.append(p)
@@ -41,11 +42,16 @@ class Generator:
             parents = []
             _each_layer_num_parents = []
             for c, l_idx in zip(cur, layer_indcies):
-                if c.layers is not None:
+                if c is None:
+                    layer.append(None)
+                elif c.layers is not None:
                     layer.append(c.layers[l_idx])
                 else:
                     layer.append(None)
-                if c.parent is None:
+                if c is None:
+                    parents.append(None)
+                    continue
+                elif c.parent is None:
                     parents.append(None)
                     continue
                 for p in c.parent:

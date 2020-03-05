@@ -115,3 +115,19 @@ def test_multi_modal_index_access():
     m.append([100])
     g = Generator(m)
     assert g[3] == [[100, None], [1000, 1], [40000, 10], [None], [100]]
+
+
+def test_multi_modal2_index_access():
+    m = MultiHeadLinkedListLayer()
+    m.append([1, 2, 3, 4, 5])
+    m.append([10, 20, 30, 40, 50])
+    m1 = MultiHeadLinkedListLayer()
+    m1.append([100, 200])
+    m1.append([1000, 2000, 3000, 4000])
+    m1.append([10000, 20000, 30000, 40000])
+    m1.append([100000, 200000, 300000, 400000])
+    m1.append([1000000, 2000000, 3000000, 4000000])
+    m = m1 + m
+    m.append([100])
+    g = Generator(m)
+    assert g[3] == [[100, None], [1000, None], [10000, None], [100000, 1], [4000000, 10], [None], [100]]
