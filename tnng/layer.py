@@ -82,7 +82,7 @@ class MultiHeadLinkedListLayer:
         return out
 
     def __rper__(self):
-        return "Multi"
+        return f"MultiHeadLinkedListLayer({self.length})"
 
     def __len__(self):
         return self.length
