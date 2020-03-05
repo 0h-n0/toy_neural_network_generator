@@ -3,7 +3,7 @@
 # Toy Neural Network Generator
 
 
-## Simple Modle Generator
+## Simple Model Generator
 
 ```python
 #!/usr/bin/env python
