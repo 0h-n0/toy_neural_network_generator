@@ -61,6 +61,7 @@ def test_get_layer_index_list(index_get_layer_index_list_test_case):
         [5, [[1], [0], [0, 2], [0, 0], [0, 0]]],
         [449, [[1], [0], [0, 2], [2, 4], [4, 0]]],
         [-1, [[1], [0], [0, 2], [2, 4], [4, 0]]],
+        [-2, [[0], [0], [0, 2], [2, 4], [4, 0]]],
     ]
 )
 def index_multimodal_get_layer_index_list_test_case(request):
@@ -82,3 +83,35 @@ def test_layer_num_list_multimodal(index_multimodal_get_layer_index_list_test_ca
     m.append([100, 200])
     g = Generator(m)
     assert g._get_layer_index_list(input) == expected
+
+@pytest.mark.xfail
+def test_layer_index_access_error():
+    m = MultiHeadLinkedListLayer()
+    m.append([1, 2, 3, 4, 5])
+    g = Generator(m)
+    g[10]
+
+
+def test_index_access():
+    m = MultiHeadLinkedListLayer()
+    m.append([1, 2, 3, 4, 5])
+    m.append([10, 20, 30, 40, 50])
+    m.append([100, 200])
+    m.append([1000, 2000, 3000, 4000])
+    m.append([10000, 20000, 30000, 40000])
+    g = Generator(m)
+    assert g[3] == [[1], [10], [100], [1000], [40000]]
+
+
+def test_multi_modal_index_access():
+    m = MultiHeadLinkedListLayer()
+    m.append([1, 2, 3, 4, 5])
+    m.append([10, 20, 30, 40, 50])
+    m1 = MultiHeadLinkedListLayer()
+    m1.append([100, 200])
+    m1.append([1000, 2000, 3000, 4000])
+    m1.append([10000, 20000, 30000, 40000])
+    m = m1 + m
+    m.append([100])
+    g = Generator(m)
+    assert g[3] == [[100, None], [1000, 1], [40000, 10], [None], [100]]
