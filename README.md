@@ -2,6 +2,11 @@
 
 # Toy Neural Network Generator
 
+## Installation
+
+```shell
+$ pip install tnng
+```
 
 ## Simple Model Generator
 
