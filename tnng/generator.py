@@ -9,21 +9,18 @@ class Generator:
     def _preprocess(self, multi_head_linked_list_layer) -> int:
         cur = [multi_head_linked_list_layer.tail,]
         num = 1
+        num *= len(multi_head_linked_list_layer.tail.layers)
         for _ in range(multi_head_linked_list_layer.depth):
             parents = []
-            num_parents = []
             for c in cur:
                 if c is None or c.parent is None:
                     parents.append(None)
-                    num_parents.append(1)
                     continue
                 for p in c.parent:
                     parents.append(p)
                     if p.layers is not None:
-                        num_parents.append(len(p.layers))
                         num *= len(p.layers)
-                    else:
-                        num_parents.append(1)
+                print(num)
             cur = parents
         return num
 

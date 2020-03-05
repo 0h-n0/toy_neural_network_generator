@@ -29,7 +29,7 @@ class Layer:
 
 
 class MultiHeadLinkedListLayer:
-    def __init__(self, head=None, depth: int = 1):
+    def __init__(self, head=None, depth: int = 0):
         if head is None:
             self.head = Layer()
         else:
