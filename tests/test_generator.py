@@ -35,14 +35,14 @@ def test_multi_modal_generator_length():
         [-1, [[0], [2], [4]]],
     ]
 )
-def index_acccess_test_case(request):
+def index_get_layer_index_list_test_case(request):
     input = request.param[0]
     expected = request.param[1]
     return input, expected
 
-def test_get_layer_index_list(index_acccess_test_case):
-    input = index_acccess_test_case[0]
-    expected = index_acccess_test_case[1]
+def test_get_layer_index_list(index_get_layer_index_list_test_case):
+    input = index_get_layer_index_list_test_case[0]
+    expected = index_get_layer_index_list_test_case[1]
     m = MultiHeadLinkedListLayer()
     m.append([1, 2, 3, 4, 5])
     m.append([6, 7, 8])
@@ -51,7 +51,26 @@ def test_get_layer_index_list(index_acccess_test_case):
     assert g._get_layer_index_list(input) == expected
 
 
-def test_layer_num_list_multimodal():
+@pytest.fixture(
+    params=[
+        [0, [[0], [0], [0, 0], [0, 0], [0, 0]]],
+        [1, [[1], [0], [0, 0], [0, 0], [0, 0]]],
+        [2, [[0], [0], [0, 1], [0, 0], [0, 0]]],
+        [3, [[1], [0], [0, 1], [0, 0], [0, 0]]],
+        [4, [[0], [0], [0, 2], [0, 0], [0, 0]]],
+        [5, [[1], [0], [0, 2], [0, 0], [0, 0]]],
+        [449, [[1], [0], [0, 2], [2, 4], [4, 0]]],
+        [-1, [[1], [0], [0, 2], [2, 4], [4, 0]]],
+    ]
+)
+def index_multimodal_get_layer_index_list_test_case(request):
+    input = request.param[0]
+    expected = request.param[1]
+    return input, expected
+
+def test_layer_num_list_multimodal(index_multimodal_get_layer_index_list_test_case):
+    input = index_multimodal_get_layer_index_list_test_case[0]
+    expected = index_multimodal_get_layer_index_list_test_case[1]
     m = MultiHeadLinkedListLayer()
     m.append([1, 2, 3, 4, 5])
     m.append([6, 7, 8])
@@ -62,4 +81,4 @@ def test_layer_num_list_multimodal():
     m = m + m1
     m.append([100, 200])
     g = Generator(m)
-    assert [1, 6, 10] == g[1]
+    assert g._get_layer_index_list(input) == expected
