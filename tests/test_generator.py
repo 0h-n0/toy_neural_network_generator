@@ -1,6 +1,23 @@
+import unittest
+
 import pytest
 
 from tnng import MultiHeadLinkedListLayer, Generator
+
+
+try:
+    import tensorflow
+    import tensorflow.keras as keras
+    exist_tensorflow = True
+except:
+    exist_tensorflow = False
+
+try:
+    import torch
+    exist_torch = True
+except:
+    exist_torch = False
+
 
 def test_generator_length():
     m = MultiHeadLinkedListLayer()
@@ -131,3 +148,23 @@ def test_multi_modal2_index_access():
     m.append([100])
     g = Generator(m)
     assert g[3] == [[100, None], [1000, None], [10000, None], [100000, 1], [4000000, 10], [None], [100]]
+
+
+@pytest.mark.skipif(not exist_tensorflow, reason="no tensorflow")
+class TestTensorflow(unittest.TestCase):
+    def test_tensorflow_layers_append(self):
+        m = MultiHeadLinkedListLayer()
+        # graph created
+        m.append_lazy(keras.layers.Flatten, [dict(input_shape=(28, 28)),])
+        m.append_lazy(keras.layers.Dense, [dict(units=32), dict(units=64), dict(units=128)])
+        m.append_lazy(keras.layers.ReLU, [dict(),])
+        m.append_lazy(keras.layers.Dense, [dict(units=16), dict(units=32), dict(units=64)])
+        m.append_lazy(keras.layers.ReLU, [dict(),])
+        m.append_lazy(keras.layers.Dense, [dict(units=10),])
+        g = Generator(m)
+        print(g[1])
+
+@pytest.mark.skipif(not exist_torch, reason="no torch")
+class TestTorch(unittest.TestCase):
+    def test_torch_layers_append(self):
+        pass

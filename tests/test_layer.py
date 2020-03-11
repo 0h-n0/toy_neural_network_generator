@@ -3,22 +3,9 @@ import unittest
 import pytest
 
 from tnng.layer import (BaseLayer,
-                  Layer,
-                  LazyLayer,
-                  MultiHeadLinkedListLayer)
-
-
-try:
-    import tensorflow
-    exist_tensorflow = True
-except:
-    exist_tensorflow = False
-
-try:
-    import torch
-    exist_torch = True
-except:
-    exist_torch = False
+                        Layer,
+                        LazyLayer,
+                        MultiHeadLinkedListLayer)
 
 
 class Hoge:
@@ -97,16 +84,3 @@ def test_multi_modal_multi_haed_linked_list_lazylayer_depth():
     m = m1 + m # add concat layer
     m.append_lazy(Hoge, args)
     assert len(m) == 5
-
-
-@pytest.mark.skipif(not exist_tensorflow, reason="no tensorflow")
-class TestTensorflow(unittest.TestCase):
-    def test_tensorflow_layers_append(self):
-
-        pass
-
-
-@pytest.mark.skipif(not exist_torch, reason="no torch")
-class TestTorch(unittest.TestCase):
-    def test_torch_layers_append(self):
-        pass

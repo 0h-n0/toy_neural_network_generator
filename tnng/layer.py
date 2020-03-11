@@ -56,6 +56,7 @@ class LazyLayer(BaseLayer):
             assert isinstance(kwargs_list[0], dict)
         self.klass = klass
         self.kwargs_list = kwargs_list
+        self.layers = kwargs_list #
 
 
 class MultiHeadLinkedListLayer:
