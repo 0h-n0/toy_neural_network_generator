@@ -1,5 +1,3 @@
-import os
-import re
 import setuptools
 from pathlib import Path
 
@@ -16,7 +14,7 @@ install_requires = [
 test_require = [
     'pytest-cov',
     'pytest-html',
-    'pytest'
+    'pytest',
 ]
 
 setuptools.setup(
