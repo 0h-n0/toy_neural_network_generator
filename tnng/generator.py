@@ -1,4 +1,6 @@
-from .layer import MultiHeadLinkedListLayer
+import typing
+
+from .layer import Layer, LazyLayer, MultiHeadLinkedListLayer
 
 
 class Generator:
@@ -6,7 +8,7 @@ class Generator:
         self.multi_head_linked_list_layer = multi_head_linked_list_layer
         self._len, self.layer_num_list = self._preprocess(self.multi_head_linked_list_layer)
 
-    def _preprocess(self, multi_head_linked_list_layer) -> int:
+    def _preprocess(self, multi_head_linked_list_layer) -> (int, typing.List[int]):
         cur = [multi_head_linked_list_layer.tail,]
         num = 1
         num *= len(multi_head_linked_list_layer.tail.layers)
@@ -38,24 +40,31 @@ class Generator:
         out = []
         cur = [self.multi_head_linked_list_layer.tail,]
         for layer_indcies in layer_index_list:
+            # from tail to head
             layer = []
             parents = []
             _each_layer_num_parents = []
-            for c, l_idx in zip(cur, layer_indcies):
-                if c is None:
+            for current_layer, l_idx in zip(cur, layer_indcies):
+                if current_layer is None:
                     layer.append(None)
-                elif c.layers is not None:
-                    layer.append(c.layers[l_idx])
+                elif current_layer.layers is not None:
+                    if isinstance(current_layer, Layer):
+                        layer.append(current_layer.layers[l_idx])
+                    elif isinstance(current_layer, Layer):
+                        kwargs = current_layer.kwargs_list[l_idx]
+                        layer.append(current_layer.layers.klass(**kwargs))
+                    else:
+                        NotImplementedError
                 else:
                     layer.append(None)
-                if c is None:
+                if current_layer is None:
                     parents.append(None)
                     continue
-                elif c.parent is None:
+                elif current_layer.parent is None:
                     parents.append(None)
                     continue
-                for p in c.parent:
-                    parents.append(p)
+                for parent in current_layer.parent:
+                    parents.append(parent)
             cur = parents
             out.append(layer)
         return out[::-1]
