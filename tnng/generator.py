@@ -50,11 +50,11 @@ class Generator:
                 elif current_layer.layers is not None:
                     if isinstance(current_layer, Layer):
                         layer.append(current_layer.layers[l_idx])
-                    elif isinstance(current_layer, Layer):
+                    elif isinstance(current_layer, LazyLayer):
                         kwargs = current_layer.kwargs_list[l_idx]
-                        layer.append(current_layer.layers.klass(**kwargs))
+                        layer.append(current_layer.klass(**kwargs))
                     else:
-                        NotImplementedError
+                        raise NotImplementedError
                 else:
                     layer.append(None)
                 if current_layer is None:
