@@ -190,3 +190,10 @@ class Generator:
 
     def __len__(self):
         return self._len
+
+    def draw_graph(self, filename):
+        import matplotlib.pyplot as plt
+        G, _ = self._create_backbone_graph(self.multi_head_linked_list_layer)
+        pos = nx.spring_layout(G, iterations=200)
+        nx.draw(G, pos)
+        plt.savefig(filename)
