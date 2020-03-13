@@ -98,7 +98,7 @@ class Generator:
                     elif isinstance(current_layer, LazyLayer):
                         kwargs = current_layer.kwargs_list[l_idx]
                         klass = current_layer.klass
-                        if klass.__class__ == DummyConcat.__class__:
+                        if klass == DummyConcat:
                             layer.append(current_layer.klass)
                         else:
                             layer.append(current_layer.klass(**kwargs))
@@ -130,7 +130,7 @@ class Generator:
         node_attributes = {}
         for layer_indcies in layer_index_list:
             # from tail to head
-            layer = []
+            layer = [] #TODO: refactor: layer is not necessary
             parents = []
             for current_layer, l_idx in zip(cur, layer_indcies):
                 if current_layer is None:

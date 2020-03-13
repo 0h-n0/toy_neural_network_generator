@@ -218,6 +218,12 @@ def test_simple_network_graph_dump():
 
 @pytest.mark.skipif(not exist_tensorflow, reason="no tensorflow")
 class TestTensorflow(unittest.TestCase):
+    def create_model(self, graph):
+        model = keras.Sequential()
+        for layer in graph:
+            model.add(layer[0])
+        return model
+
     def test_tensorflow_layers_append(self):
         m = MultiHeadLinkedListLayer()
         # graph created
@@ -230,6 +236,18 @@ class TestTensorflow(unittest.TestCase):
         g = Generator(m)
         print(g[1])
 
+    def test_tensorflow_layers_append_and_sequential_model(self):
+        m = MultiHeadLinkedListLayer()
+        # graph created
+        # m.append_lazy(keras.layers.Flatten, [dict(input_shape=(28, 28)),])
+        m.append_lazy(keras.layers.Dense, [dict(units=32), dict(units=64), dict(units=128)])
+        m.append_lazy(keras.layers.ReLU, [dict(),])
+        m.append_lazy(keras.layers.Dense, [dict(units=16), dict(units=32), dict(units=64)])
+        m.append_lazy(keras.layers.ReLU, [dict(),])
+        m.append_lazy(keras.layers.Dense, [dict(units=10),])
+        g = Generator(m)
+        self.create_model(g[1])
+
     def test_tensorflow_layers_append_and_dump_nn_graph(self):
         m = MultiHeadLinkedListLayer()
         m.append_lazy(keras.layers.Flatten, [dict(input_shape=(28, 28)),])
@@ -239,7 +257,9 @@ class TestTensorflow(unittest.TestCase):
         m.append_lazy(keras.layers.ReLU, [dict(),])
         m.append_lazy(keras.layers.Dense, [dict(units=10),])
         g = Generator(m, dump_nn_graph=True)
-        print(g[0])
+        graph, (adj, features) = g[0]
+        print(graph)
+        self.create_model(graph)
 
 @pytest.mark.skipif(not exist_torch, reason="no torch")
 class TestTorch(unittest.TestCase):
