@@ -1,6 +1,13 @@
 import typing
 
 
+class DummyConcat:
+    def __init__(self, dummy_args):
+        self.dummy_args = dummy_args
+    def __call__(self, x):
+        return x
+
+
 class BaseLayer:
     def __init__(self,
                  parent: typing.List['Layer'] = None,
@@ -22,11 +29,10 @@ class BaseLayer:
         return self._parent
 
     def __str__(self):
-        return f"Layer({self.layers}) parent:{self._parent}, child:{self.child}"
+        return f"{self.__class__.__name__}({self.layers}) parent:{self._parent}, child:{self.child}"
 
     def __repr__(self):
-        return f"Layer({self.layers})"
-
+        return f"{self.__class__.__name__}({self.layers})"
 
 
 class Layer(BaseLayer):
@@ -40,7 +46,6 @@ class Layer(BaseLayer):
             len(layers) # check length access
         assert isinstance(parent, list) or parent is None
         self.layers = layers
-
 
 
 class LazyLayer(BaseLayer):
@@ -65,9 +70,11 @@ class MultiHeadLinkedListLayer:
             self.head = Layer()
         else:
             self.head = head
+        assert isinstance(self.head, (Layer, LazyLayer))
         self.tail = self.head
         self._immutable = False
         self.depth = depth
+        self.klass_set = set()
 
     def _set_immutable(self):
         self._immutable = True
@@ -87,6 +94,7 @@ class MultiHeadLinkedListLayer:
         if self._immutable:
             print("can't append Lazy Layer")
             return self
+        self.klass_set.add(klass)
         self.depth += 1
         new = LazyLayer(klass, layers)
         self.tail.child = new
@@ -95,7 +103,7 @@ class MultiHeadLinkedListLayer:
         return self
 
     def __add__(self, other: 'MultiHeadLinkedListLayer') -> 'MultiHeadLinkedListLayer':
-        concat_layer = Layer()
+        concat_layer = LazyLayer(DummyConcat, [dict(dummy_args=True),])
         self.tail.child = concat_layer
         other.tail.child = concat_layer
         concat_layer.parent = [self.tail, other.tail]
@@ -106,7 +114,6 @@ class MultiHeadLinkedListLayer:
         else:
             _depth = other.depth
         _depth += 1 # for concat layer
-
         return MultiHeadLinkedListLayer(concat_layer, _depth)
 
     def __str__(self):

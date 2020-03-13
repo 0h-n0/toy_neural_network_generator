@@ -1,3 +1,4 @@
+import warnings
 import unittest
 
 import pytest
@@ -83,4 +84,5 @@ def test_multi_modal_multi_haed_linked_list_lazylayer_depth():
     m1.append_lazy(Hoge, args)
     m = m1 + m # add concat layer
     m.append_lazy(Hoge, args)
+    warnings.warn(f'{m.klass_set}')
     assert len(m) == 5

@@ -1,8 +1,10 @@
 import unittest
 
 import pytest
+import numpy as np
 
 from tnng import MultiHeadLinkedListLayer, Generator
+from tnng.layer import DummyConcat
 
 
 try:
@@ -131,7 +133,7 @@ def test_multi_modal_index_access():
     m = m1 + m
     m.append([100])
     g = Generator(m)
-    assert g[3] == [[100, None], [1000, 1], [40000, 10], [None], [100]]
+    assert g[3] == [[100, None], [1000, 1], [40000, 10], [DummyConcat], [100]]
 
 
 def test_multi_modal2_index_access():
@@ -147,8 +149,74 @@ def test_multi_modal2_index_access():
     m = m1 + m
     m.append([100])
     g = Generator(m)
-    assert g[3] == [[100, None], [1000, None], [10000, None], [100000, 1], [4000000, 10], [None], [100]]
+    assert g[3] == [[100, None], [1000, None], [10000, None], [100000, 1], [4000000, 10], [DummyConcat], [100]]
 
+
+def test_simple_network_graph_dump():
+    class Hoge1:
+        def __init__(self, units):
+            self.units = units
+        def __call__(self, x):
+            pass
+
+    class Hoge2:
+        def __init__(self, units):
+            self.units = units
+        def __call__(self, x):
+            pass
+
+    class Hoge3:
+        def __init__(self, units):
+            self.units = units
+        def __call__(self, x):
+            pass
+
+    class Hoge4:
+        def __init__(self, units):
+            self.units = units
+        def __call__(self, x):
+            pass
+
+    m1 = MultiHeadLinkedListLayer()
+    num_nodes = 0
+    num_features = 0 # coresponds to number of type of layers
+
+    m1.append_lazy(Hoge1, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1; num_features += 1
+    m1.append_lazy(Hoge2, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1; num_features += 1
+    m1.append_lazy(Hoge3, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1; num_features += 1
+    m1.append_lazy(Hoge4, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1; num_features += 1
+    m2 = MultiHeadLinkedListLayer()
+    m2.append_lazy(Hoge1, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1
+    m = m1 + m2; num_nodes += 1; num_features += 1
+    m.append_lazy(Hoge4, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1
+    m.append_lazy(Hoge3, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1
+
+    g = Generator(m, dump_graph_format=True)
+    graph, (adj, features) = g[0]
+    assert adj.shape == (num_nodes, num_nodes)
+    assert features.shape == (num_nodes, num_features)
+    expected_features = np.array([
+        [0, 0, 0, 32, 0],
+        [0, 0, 0, 0, 32],
+        [1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 32],
+        [0, 32, 0, 0, 0],
+        [0, 0, 0, 32, 0],
+        [0, 0, 32, 0, 0],
+        [0, 32, 0, 0, 0]])
+
+    expected_adj = np.array([[0., 1., 0., 0., 0., 0., 0., 0.],
+                             [1., 0., 1., 0., 0., 0., 0., 0.],
+                             [0., 1., 0., 1., 1., 0., 0., 0.],
+                             [0., 0., 1., 0., 0., 0., 0., 0.],
+                             [0., 0., 1., 0., 0., 1., 0., 0.],
+                             [0., 0., 0., 0., 1., 0., 1., 0.],
+                             [0., 0., 0., 0., 0., 1., 0., 1.],
+                             [0., 0., 0., 0., 0., 0., 1., 0.]])
+    np.testing.assert_array_equal(features, expected_features)
+    print(features)
+    print(adj)
+    np.testing.assert_array_equal(adj, expected_adj)
 
 @pytest.mark.skipif(not exist_tensorflow, reason="no tensorflow")
 class TestTensorflow(unittest.TestCase):

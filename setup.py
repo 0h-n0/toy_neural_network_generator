@@ -6,10 +6,12 @@ p = Path(__file__)
 
 setup_requires = [
     'numpy',
-    'pytest-runner'
+    'pytest-runner',
+    'networkx>=2.4'
 ]
 
 install_requires = [
+    'networkx>=2.4'
 ]
 test_require = [
     'pytest-cov',
