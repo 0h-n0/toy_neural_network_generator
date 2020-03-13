@@ -11,12 +11,12 @@ from .layer import Layer, LazyLayer, MultiHeadLinkedListLayer, DummyConcat
 class Generator:
     def __init__(self,
                  multi_head_linked_list_layer: MultiHeadLinkedListLayer,
-                 dump_graph_format: bool = False,
+                 dump_nn_graph: bool = False,
     ):
         self.multi_head_linked_list_layer = multi_head_linked_list_layer
-        self.dump_graph_format = dump_graph_format
+        self.dump_nn_graph = dump_nn_graph
         self._len, self.layer_num_list = self._preprocess(multi_head_linked_list_layer)
-        if self.dump_graph_format:
+        if self.dump_nn_graph:
             self._backbone_graph, self._node_features = \
                 self._create_backbone_graph(multi_head_linked_list_layer)
 
@@ -50,14 +50,6 @@ class Generator:
                     parents.append(p)
             cur = parents
         node_features = sorted(node_features)
-        '''
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        nx.draw(backbone_graph, with_labels=True)
-        print(nx.adjacency_matrix(backbone_graph)) # sparse matrix
-        plt.savefig('/home/ono/Dropbox/hello.png')
-        '''
         return backbone_graph, node_features
 
     def _preprocess(self, multi_head_linked_list_layer) -> (int, typing.List[int]):
@@ -124,7 +116,7 @@ class Generator:
                     parents.append(parent)
             cur = parents
             out.append(layer)
-        if self.dump_graph_format:
+        if self.dump_nn_graph:
             nodelist = range(len(self._backbone_graph.nodes()))
             adj = nx.to_numpy_matrix(self._backbone_graph, nodelist=nodelist)
             node_features = self._create_node_features(idx, layer_index_list)
@@ -156,8 +148,14 @@ class Generator:
                             x[idx] = 1
                         else:
                             layer.append(current_layer.klass(**kwargs))
-                            # TODO: should support multiple args.
-                            value = list(kwargs.values())[0]
+                            if kwargs:
+                                value = list(kwargs.values())[0]
+                            else:
+                                value = 1
+                            if not isinstance(value, (int, float)):
+                                # for example, tuple arguments and list or something.
+                                # current version can't convert one numpy value.
+                                value = 1
                             x[idx] = value
                         node_attributes[node_idx] = {'features': x}
                         node_idx += 1

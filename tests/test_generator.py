@@ -191,7 +191,7 @@ def test_simple_network_graph_dump():
     m.append_lazy(Hoge4, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1
     m.append_lazy(Hoge3, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1
 
-    g = Generator(m, dump_graph_format=True)
+    g = Generator(m, dump_nn_graph=True)
     graph, (adj, features) = g[0]
     assert adj.shape == (num_nodes, num_nodes)
     assert features.shape == (num_nodes, num_features)
@@ -214,8 +214,6 @@ def test_simple_network_graph_dump():
                              [0., 0., 0., 0., 0., 1., 0., 1.],
                              [0., 0., 0., 0., 0., 0., 1., 0.]])
     np.testing.assert_array_equal(features, expected_features)
-    print(features)
-    print(adj)
     np.testing.assert_array_equal(adj, expected_adj)
 
 @pytest.mark.skipif(not exist_tensorflow, reason="no tensorflow")
@@ -231,6 +229,17 @@ class TestTensorflow(unittest.TestCase):
         m.append_lazy(keras.layers.Dense, [dict(units=10),])
         g = Generator(m)
         print(g[1])
+
+    def test_tensorflow_layers_append_and_dump_nn_graph(self):
+        m = MultiHeadLinkedListLayer()
+        m.append_lazy(keras.layers.Flatten, [dict(input_shape=(28, 28)),])
+        m.append_lazy(keras.layers.Dense, [dict(units=32), dict(units=64), dict(units=128)])
+        m.append_lazy(keras.layers.ReLU, [dict(),])
+        m.append_lazy(keras.layers.Dense, [dict(units=16), dict(units=32), dict(units=64)])
+        m.append_lazy(keras.layers.ReLU, [dict(),])
+        m.append_lazy(keras.layers.Dense, [dict(units=10),])
+        g = Generator(m, dump_nn_graph=True)
+        print(g[0])
 
 @pytest.mark.skipif(not exist_torch, reason="no torch")
 class TestTorch(unittest.TestCase):
