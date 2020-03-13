@@ -84,9 +84,12 @@ class MultiHeadLinkedListLayer:
     def _set_immutable(self):
         self._immutable = True
 
-    def _add_node(self) -> nx.Graph:
+    def _add_node(self, attr=None) -> nx.Graph:
         n_node = len(self.graph.nodes())
-        self._graph.add_node(n_node)
+        if attr is not None:
+            self._graph.add_node(n_node, type=attr)
+        else:
+            self._graph.add_node(n_node)
         if self.depth > 1:
             self._graph.add_edge(n_node-1, n_node)
         return self._graph
@@ -113,7 +116,7 @@ class MultiHeadLinkedListLayer:
         self.tail.child = new
         new.parent = [self.tail,]
         self.tail = new
-        self._add_node()
+        self._add_node(str(klass.__name__))
         return self
 
     def __add__(self, other: 'MultiHeadLinkedListLayer') -> 'MultiHeadLinkedListLayer':
