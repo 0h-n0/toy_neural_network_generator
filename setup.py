@@ -21,7 +21,7 @@ test_require = [
 
 setuptools.setup(
     name="tnng",
-    version='0.3.0',
+    version='0.3.1',
     python_requires='>3.5',
     author="Koji Ono",
     author_email="koji.ono@exwzd.com",
