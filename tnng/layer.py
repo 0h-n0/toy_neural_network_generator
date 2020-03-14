@@ -84,10 +84,17 @@ class MultiHeadLinkedListLayer:
     def _set_immutable(self):
         self._immutable = True
 
-    def _add_node(self, attr=None) -> nx.Graph:
+    def _add_node(self, attr: list = []) -> nx.Graph:
         n_node = len(self.graph.nodes())
         if attr is not None:
-            self._graph.add_node(n_node, type=attr)
+            if len(attr) == 1:
+                # append
+                self._graph.add_node(n_node, args=attr)
+            elif len(attr) == 2:
+                # append_lazy
+                self._graph.add_node(n_node, layer=attr[0], args=attr[1])
+            else:
+                raise NotImplementedError
         else:
             self._graph.add_node(n_node)
         if self.depth > 1:
@@ -103,7 +110,7 @@ class MultiHeadLinkedListLayer:
         self.tail.child = new
         new.parent = [self.tail,]
         self.tail = new
-        self._add_node()
+        self._add_node([layers,])
         return self
 
     def append_lazy(self, klass, layers: typing.List['kwargs']) -> 'MultiHeadLinkedListLayer':
@@ -116,7 +123,7 @@ class MultiHeadLinkedListLayer:
         self.tail.child = new
         new.parent = [self.tail,]
         self.tail = new
-        self._add_node(str(klass.__name__))
+        self._add_node([klass, layers])
         return self
 
     def __add__(self, other: 'MultiHeadLinkedListLayer') -> 'MultiHeadLinkedListLayer':
@@ -134,7 +141,7 @@ class MultiHeadLinkedListLayer:
         graph = self._concat_graph(other)
         return MultiHeadLinkedListLayer(concat_layer, _depth, graph)
 
-    def _concat_graph(self, other) -> (nx.Graph, int):
+    def _concat_graph(self, other) -> nx.Graph:
         n_graph_nodes = len(self.graph.nodes())
         n_other_nodes = len(other.graph.nodes())
         _n_node = n_graph_nodes + n_other_nodes
