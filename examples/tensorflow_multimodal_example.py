@@ -4,26 +4,25 @@ import tensorflow.keras.layers as L
 from tensorflow.keras import Sequential
 from tnng import Generator, MultiHeadLinkedListLayer
 
-m = MultiHeadLinkedListLayer()
-m.append([L.Dense(64), L.Dense(128), L.Dense(256), tf.identity])
-m.append([L.ReLU(), L.ELU(), tf.identity])
-m.append([L.Dense(16), L.Dense(32), L.Dense(64), tf.identity])
-m.append([L.ReLU(), L.ELU(), tf.identity])
+m2 = MultiHeadLinkedListLayer()
+m2.append_lazy(L.Flatten, [dict(input_shape=(28, 28)),])
+m2.append_lazy(L.Dense, [dict(units=32), dict(units=64), dict(units=128)])
+m2.append_lazy(L.ReLU, [dict(),])
+m2.append_lazy(L.Dense, [dict(units=16), dict(units=32), dict(units=64)])
+m2.append_lazy(L.ReLU, [dict(),])
+
 
 m1 = MultiHeadLinkedListLayer()
-m1.append([L.Conv2D(64, 2), L.Conv2D(128, 2), tf.identity])
-m1.append([L.ReLU(), L.ELU(), tf.identity])
-m1.append([L.Conv2D(256, 2), L.Conv2D(256, 1), tf.identity])
-m1.append([L.ReLU(), L.ELU(), tf.identity])
-m1.append([L.Conv2D(256, 2), L.Conv2D(256, 1), tf.identity])
-m1.append([L.ReLU(), L.ELU(), tf.identity])
-m1.append([L.Conv2D(256, 2), L.Conv2D(256, 1), tf.identity])
-m1.append([L.ReLU(), L.ELU(), tf.identity])
-m1.append([L.Flatten()])
+m1.append_lazy(L.Flatten, [dict(input_shape=(28, 28)),])
 
-m = m + m1
-m.append([L.Dense(10)])
+m = m1 + m2
+
+m.append_lazy(L.Dense, [dict(units=10),])
+m.append_lazy(L.Dense, [dict(units=10),])
+m.append_lazy(L.Dense, [dict(units=10),])
+
 g = Generator(m)
+g.draw_graph('/home/ono/Dropbox/tensorflow_multi_modal.png')
 
 x1 = tf.compat.v1.placeholder(tf.float32, shape=(None, 32))
 x2 = tf.compat.v1.placeholder(tf.float32, shape=(None, 28, 28, 3))

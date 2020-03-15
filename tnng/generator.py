@@ -1,5 +1,6 @@
 import typing
 import warnings
+import numbers
 
 ## for graph dumpping
 import networkx as nx
@@ -15,178 +16,128 @@ class Generator:
     ):
         self.multi_head_linked_list_layer = multi_head_linked_list_layer
         self.dump_nn_graph = dump_nn_graph
-        self._len, self.layer_num_list = self._preprocess(multi_head_linked_list_layer)
-        if self.dump_nn_graph:
-            self._backbone_graph, self._node_features = \
-                self._create_backbone_graph(multi_head_linked_list_layer)
+        self._len, self._node_type_layers, _node_types = \
+            self._calc_num_of_all_combination(multi_head_linked_list_layer)
+        self._node_types_list = sorted(list(_node_types))
 
-    def _create_backbone_graph(self, multi_head_linked_list_layer):
-        ''' only work for lazy_layer, create a backbone graph using networkx.
-        '''
-        backbone_graph = nx.Graph()
-        cur = [multi_head_linked_list_layer.tail,]
-        node_idx = 0
-        node_labels = {}
-        node_labels[node_idx] = str(multi_head_linked_list_layer.tail.klass.__name__)
-        node_features = set()
-        for _ in range(multi_head_linked_list_layer.depth-1):
-            parents = []
-            for c in cur:
-                cur_node_idx = node_idx
-                for p in c.parent[::-1]:
-                    if p is None or p.parent is None:
-                        continue
-                    node_idx += 1
-                    try:
-                        node_labels[node_idx] = str(p.klass.__name__)
-                        node_features.add(p.klass.__name__)
-                    except AttributeError as e:
-                        warnings.warn(f"{e}")
-                        node_labels[node_idx] = None
-                    except Exception as e:
-                        raise e
-                    backbone_graph.add_node(node_idx)
-                    backbone_graph.add_edge(cur_node_idx, node_idx)
-                    parents.append(p)
-            cur = parents
-        node_features = sorted(node_features)
-        return backbone_graph, node_features
-
-    def _preprocess(self, multi_head_linked_list_layer) -> (int, typing.List[int]):
+    def _calc_num_of_all_combination(self, multi_head_linked_list_layer) -> (int, typing.List[int], set):
         ''' calculate each the number of layer's combination.
         '''
-        cur = [multi_head_linked_list_layer.tail,]
         num = 1
-        num *= len(multi_head_linked_list_layer.tail.layers)
-        num_candidates = [[len(multi_head_linked_list_layer.tail.layers),],]
-        for _ in range(multi_head_linked_list_layer.depth-1):
-            parents = []
-            _each_layer_num_candidates = []
-            for c in cur:
-                if  c is None or c.parent is None:
-                    parents.append(None)
-                    _each_layer_num_candidates.append(1)
-                    continue
-                for p in c.parent:
-                    parents.append(p)
-                    if p.layers is not None:
-                        num *= len(p.layers)
-                        _each_layer_num_candidates.append(len(p.layers))
-                    else:
-                        _each_layer_num_candidates.append(1)
-            if _each_layer_num_candidates:
-                num_candidates.append(_each_layer_num_candidates)
-            cur = parents
-        return num, num_candidates
+        node_type_layers = []
+        node_types = set()
+        for node in self.multi_head_linked_list_layer.graph.nodes(data=True):
+            if not 'args' in node[1].keys():
+                continue
+            if not node[1]['args']:
+                continue
+            if 'layer' in node[1].keys():
+                # append_lazy
+                _n_type = len(node[1]['args'])
+                node_types.add(node[1]['layer'].__name__)
+            else:
+                _n_type = len(node[1]['args'][0])
+                node_types.add('value')
+            node_type_layers.append(_n_type)
+            num *= _n_type
+        return num, node_type_layers, node_types
 
     def __getitem__(self, idx):
         if idx > self._len:
             raise IndexError(f"access by {idx}, max length is {self._len}")
-        layer_index_list = self._get_layer_index_list(idx)
-        out = []
-        cur = [self.multi_head_linked_list_layer.tail,]
-        for layer_indcies in layer_index_list:
-            # from tail to head
-            layer = []
-            parents = []
-            for current_layer, l_idx in zip(cur, layer_indcies):
-                if current_layer is None:
-                    layer.append(None)
-                elif current_layer.layers is not None:
-                    if isinstance(current_layer, Layer):
-                        layer.append(current_layer.layers[l_idx])
-                    elif isinstance(current_layer, LazyLayer):
-                        kwargs = current_layer.kwargs_list[l_idx]
-                        klass = current_layer.klass
-                        if klass == DummyConcat:
-                            layer.append(current_layer.klass)
-                        else:
-                            layer.append(current_layer.klass(**kwargs))
-                    else:
-                        raise NotImplementedError
+        graph = self.multi_head_linked_list_layer.graph
+        layer_index_list = self._get_layer_index_list(idx, self._node_type_layers)
+        last_node = len(graph.nodes()) - 1
+        no_ordered_outputs = []
+        outputs = []
+        for layer_idx, node in zip(layer_index_list, graph.nodes(data=True)):
+            if 'layer' in node[1].keys():
+                # append_lazy
+                layer = node[1]['layer']
+                if layer == DummyConcat:
+                    no_ordered_outputs.append('concat')
                 else:
-                    layer.append(None)
-                if current_layer is None:
-                    parents.append(None)
-                    continue
-                elif current_layer.parent is None:
-                    parents.append(None)
-                    continue
-                for parent in current_layer.parent:
-                    parents.append(parent)
-            cur = parents
-            out.append(layer)
+                    kwargs = node[1]['args'][layer_idx]
+                    no_ordered_outputs.append(layer(**kwargs))
+            else:
+                value = node[1]['args'][0][layer_idx]
+                no_ordered_outputs.append(value)
+        outputs.append([no_ordered_outputs[last_node],])
+
+        parents = list(graph.predecessors(last_node))
+        while True:
+            if parents.count(None) == len(parents):
+                break
+            _output = []
+            _parents = []
+            for parent in parents:
+                if parent is None:
+                    _output.append(None)
+                    __parents = [None,]
+                else:
+                    _output.append(no_ordered_outputs[parent])
+                    __parents = list(graph.predecessors(parent))
+                if not __parents:
+                    _parents += [None,]
+                else:
+                    _parents += __parents
+            outputs.append(_output)
+            parents = _parents
         if self.dump_nn_graph:
-            nodelist = range(len(self._backbone_graph.nodes()))
-            adj = nx.to_numpy_matrix(self._backbone_graph, nodelist=nodelist)
+            nodelist = range(len(graph.nodes()))
+            graph = graph.to_undirected()
+            adj = nx.to_numpy_matrix(graph, nodelist=nodelist)
             node_features = self._create_node_features(idx, layer_index_list)
-            return out[::-1], (adj, node_features)
+            return outputs[::-1], (adj, node_features)
         else:
-            return out[::-1]
+            return outputs[::-1]
 
     def _create_node_features(self, idx, layer_index_list):
-        cur = [self.multi_head_linked_list_layer.tail,]
-        node_idx = 0
-        node_attributes = {}
-        for layer_indcies in layer_index_list:
-            # from tail to head
-            layer = [] #TODO: refactor: layer is not necessary
-            parents = []
-            for current_layer, l_idx in zip(cur, layer_indcies):
-                if current_layer is None:
-                    layer.append(None)
-                elif current_layer.layers is not None:
-                    if isinstance(current_layer, Layer):
-                        layer.append(current_layer.layers[l_idx])
-                    elif isinstance(current_layer, LazyLayer):
-                        kwargs = current_layer.kwargs_list[l_idx]
-                        klass = current_layer.klass
-                        x = np.zeros(len(self._node_features))
-                        idx = self._node_features.index(current_layer.klass.__name__)
-                        if klass == DummyConcat:
-                            layer.append(current_layer.klass)
-                            x[idx] = 1
-                        else:
-                            layer.append(current_layer.klass(**kwargs))
-                            if kwargs:
-                                value = list(kwargs.values())[0]
-                            else:
-                                value = 1
-                            if not isinstance(value, (int, float)):
-                                # for example, tuple arguments and list or something.
-                                # current version can't convert one numpy value.
-                                value = 1
-                            x[idx] = value
-                        node_attributes[node_idx] = {'features': x}
-                        node_idx += 1
-                    else:
-                        raise NotImplementedError
+        graph = self.multi_head_linked_list_layer.graph
+        node_features = []
+        dim_features = len(self._node_types_list)
+        for layer_idx, node in zip(layer_index_list, graph.nodes(data=True)):
+            x = np.zeros(dim_features)
+            if 'layer' in node[1].keys():
+                # append_lazy
+                layer_name = node[1]['layer'].__name__
+                idx = self._node_types_list.index(layer_name)
+                kwargs = node[1]['args'][layer_idx]
+                # only support one kwarg.
+                values = list(kwargs.values())
+                if values:
+                    value = values[0]
                 else:
-                    layer.append(None)
-                if current_layer is None:
-                    parents.append(None)
+                    # for a layer with no arguments.
+                    x[idx] = 1
                     continue
-                elif current_layer.parent is None:
-                    parents.append(None)
-                    continue
-                for parent in current_layer.parent:
-                    parents.append(parent)
-            cur = parents
-        nx.set_node_attributes(self._backbone_graph, node_attributes)
-        sorted_features = sorted(self._backbone_graph.nodes(data=True), key=lambda x: x[0])
-        node_features = [x[1]['features'] for x in sorted_features]
+                if isinstance(value, numbers.Number):
+                    x[idx] = value
+                else:
+                    warnings.warn(f"not support {kwargs} in node features")
+            else:
+                idx = self._node_types_list.index('value')
+                value = node[1]['args'][0][layer_idx]
+                x[idx] = value
+
+            node_features.append(x)
         return np.vstack(node_features)
 
-    def _get_layer_index_list(self, idx):
+    def _get_layer_index_list(self, idx: int, node_type_layers):
         _idx = idx
         layer_index_list = []
-        for eles in self.layer_num_list:
-            _index_list = []
-            for _, ele in enumerate(eles):
-                _index_list.append(_idx % ele)
-                _idx //= ele
-            layer_index_list.append(_index_list)
+        for n_args in node_type_layers:
+            layer_index_list.append(_idx % n_args)
+            _idx //= n_args
         return layer_index_list
 
     def __len__(self):
         return self._len
+
+    def draw_graph(self, filename: str):
+        import matplotlib.pyplot as plt
+        G = self.multi_head_linked_list_layer.graph
+        pos = nx.spring_layout(G, iterations=200)
+        nx.draw(G, pos, with_labels=True)
+        plt.savefig(filename)
+        return G

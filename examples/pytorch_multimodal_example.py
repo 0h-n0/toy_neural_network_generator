@@ -24,8 +24,10 @@ m.append([exnn.Linear(128)])
 m.append([nn.ReLU(), nn.ELU(), nn.Identity()])
 m.append([exnn.Linear(10)])
 
-
 g = Generator(m)
+g.draw_graph('/home/ono/Dropbox/torch_multimodal.png')
+
+
 class Model(nn.Module):
     def __init__(self, idx=0):
         super(Model, self).__init__()
