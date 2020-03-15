@@ -5,6 +5,7 @@ import networkx as nx
 class DummyConcat:
     def __init__(self, dummy_args):
         self.dummy_args = dummy_args
+
     def __call__(self, x):
         return x
 
@@ -154,7 +155,7 @@ class MultiHeadLinkedListLayer:
         relabeled_dict = {idx: label for idx, label in enumerate(range(n_graph_nodes, _n_node))}
         other_graph = nx.relabel_nodes(other.graph, relabeled_dict)
         graph = nx.compose(self.graph, other_graph)
-        graph.add_node(nth_concat_node, args=[['concat',],])
+        graph.add_node(nth_concat_node, args=[{'dummy_args': 1},], layer=DummyConcat)
         graph.add_edge(n_graph_nodes-1, nth_concat_node)
         graph.add_edge(max(list(relabeled_dict.values())), nth_concat_node)
 
