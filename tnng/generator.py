@@ -58,7 +58,12 @@ class Generator:
                     no_ordered_outputs.append('concat')
                 else:
                     kwargs = node[1]['args'][layer_idx]
-                    no_ordered_outputs.append(layer(**kwargs))
+                    try:
+                        no_ordered_outputs.append(layer(**kwargs))
+                    except TypeError as e:
+                        warnings.warn(f"layer = {layer}")
+                        warnings.warn(f"kwargs = {kwargs}")
+                        raise e
             else:
                 value = node[1]['args'][0][layer_idx]
                 no_ordered_outputs.append(value)
