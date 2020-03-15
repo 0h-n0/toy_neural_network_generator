@@ -367,6 +367,9 @@ class TestTensorflow(unittest.TestCase):
         graph, (adj, features) = g[0]
         print(graph)
         self.create_model(graph)
+        assert (6, 3) == features.shape
+
+
 
 @pytest.mark.skipif(not exist_torch, reason="no torch")
 class TestTorch(unittest.TestCase):

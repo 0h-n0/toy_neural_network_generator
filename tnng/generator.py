@@ -107,14 +107,13 @@ class Generator:
                 values = list(kwargs.values())
                 if values:
                     value = values[0]
+                    if isinstance(value, numbers.Number):
+                        x[idx] = value
+                    else:
+                        warnings.warn(f"not support {kwargs} in node features")
                 else:
                     # for a layer with no arguments.
                     x[idx] = 1
-                    continue
-                if isinstance(value, numbers.Number):
-                    x[idx] = value
-                else:
-                    warnings.warn(f"not support {kwargs} in node features")
             else:
                 idx = self._node_types_list.index('value')
                 value = node[1]['args'][0][layer_idx]
