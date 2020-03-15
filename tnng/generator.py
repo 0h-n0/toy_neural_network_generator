@@ -1,5 +1,6 @@
 import typing
 import warnings
+import numbers
 
 ## for graph dumpping
 import networkx as nx
@@ -15,13 +16,16 @@ class Generator:
     ):
         self.multi_head_linked_list_layer = multi_head_linked_list_layer
         self.dump_nn_graph = dump_nn_graph
-        self._len, self._node_type_layers = self._calc_num_of_all_combination(multi_head_linked_list_layer)
+        self._len, self._node_type_layers, _node_types = \
+            self._calc_num_of_all_combination(multi_head_linked_list_layer)
+        self._node_types_list = sorted(list(_node_types))
 
-    def _calc_num_of_all_combination(self, multi_head_linked_list_layer) -> (int, typing.List[int]):
+    def _calc_num_of_all_combination(self, multi_head_linked_list_layer) -> (int, typing.List[int], set):
         ''' calculate each the number of layer's combination.
         '''
         num = 1
         node_type_layers = []
+        node_types = set()
         for node in self.multi_head_linked_list_layer.graph.nodes(data=True):
             if not 'args' in node[1].keys():
                 continue
@@ -30,11 +34,13 @@ class Generator:
             if 'layer' in node[1].keys():
                 # append_lazy
                 _n_type = len(node[1]['args'])
+                node_types.add(node[1]['layer'].__name__)
             else:
                 _n_type = len(node[1]['args'][0])
+                node_types.add('value')
             node_type_layers.append(_n_type)
             num *= _n_type
-        return num, node_type_layers
+        return num, node_type_layers, node_types
 
     def __getitem__(self, idx):
         if idx > self._len:
@@ -48,8 +54,11 @@ class Generator:
             if 'layer' in node[1].keys():
                 # append_lazy
                 layer = node[1]['layer']
-                kwargs = node[1]['args'][layer_idx]
-                no_ordered_outputs.append(layer(**kwargs))
+                if layer == DummyConcat:
+                    no_ordered_outputs.append('concat')
+                else:
+                    kwargs = node[1]['args'][layer_idx]
+                    no_ordered_outputs.append(layer(**kwargs))
             else:
                 value = node[1]['args'][0][layer_idx]
                 no_ordered_outputs.append(value)
@@ -75,15 +84,43 @@ class Generator:
             outputs.append(_output)
             parents = _parents
         if self.dump_nn_graph:
-            nodelist = range(len(self._backbone_graph.nodes()))
-            adj = nx.to_numpy_matrix(self._backbone_graph, nodelist=nodelist)
+            nodelist = range(len(graph.nodes()))
+            graph = graph.to_undirected()
+            adj = nx.to_numpy_matrix(graph, nodelist=nodelist)
             node_features = self._create_node_features(idx, layer_index_list)
             return outputs[::-1], (adj, node_features)
         else:
             return outputs[::-1]
 
     def _create_node_features(self, idx, layer_index_list):
-        node_features = [[]]
+        graph = self.multi_head_linked_list_layer.graph
+        node_features = []
+        dim_features = len(self._node_types_list)
+        for layer_idx, node in zip(layer_index_list, graph.nodes(data=True)):
+            x = np.zeros(dim_features)
+            if 'layer' in node[1].keys():
+                # append_lazy
+                layer_name = node[1]['layer'].__name__
+                idx = self._node_types_list.index(layer_name)
+                kwargs = node[1]['args'][layer_idx]
+                # only support one kwarg.
+                values = list(kwargs.values())
+                if values:
+                    value = values[0]
+                else:
+                    # for a layer with no arguments.
+                    x[idx] = 1
+                    continue
+                if isinstance(value, numbers.Number):
+                    x[idx] = value
+                else:
+                    warnings.warn(f"not support {kwargs} in node features")
+            else:
+                idx = self._node_types_list.index('value')
+                value = node[1]['args'][0][layer_idx]
+                x[idx] = value
+
+            node_features.append(x)
         return np.vstack(node_features)
 
     def _get_layer_index_list(self, idx: int, node_type_layers):
@@ -99,7 +136,7 @@ class Generator:
 
     def draw_graph(self, filename: str):
         import matplotlib.pyplot as plt
-        G, _ = self._create_backbone_graph(self.multi_head_linked_list_layer)
+        G = self.multi_head_linked_list_layer.graph
         pos = nx.spring_layout(G, iterations=200)
         nx.draw(G, pos, with_labels=True)
         plt.savefig(filename)

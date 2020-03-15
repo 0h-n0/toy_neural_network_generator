@@ -72,13 +72,13 @@ def test_multi_modal_generator_length():
 @pytest.fixture(
     params=[
         [0, [0, 0, 0]],
-        [1, [0, 0, 1]],
-        [2, [0, 0, 2]],
-        [3, [0, 0, 3]],
-        [4, [0, 0, 4]],
+        [1, [1, 0, 0]],
+        [2, [2, 0, 0]],
+        [3, [3, 0, 0]],
+        [4, [4, 0, 0]],
         [5, [0, 1, 0]],
-        [14, [0, 2, 4]],
-        [-1, [0, 2, 4]],
+        [14, [4, 2, 0]],
+        [-1, [4, 2, 0]],
     ]
 )
 def index_get_layer_index_list_test_case(request):
@@ -100,14 +100,14 @@ def test_get_layer_index_list(index_get_layer_index_list_test_case):
 @pytest.fixture(
     params=[
         [0, [0, 0, 0, 0, 0, 0, 0]],
-        [1, [0, 0, 0, 0, 0, 0, 1]],
-        [2, [0, 0, 0, 0, 1, 0, 0]],
-        [3, [1, 0, 1, 0, 0, 0, 0]],
-        [4, [0, 0, 2, 0, 0, 0, 0]],
-        [5, [1, 0, 2, 0, 0, 0, 0]],
-        [449, [1, 0, 2, 2, 4, 4, 0]],
-        [-1, [1, 0, 2, 2, 4, 4, 0]],
-        [-2, [0, 0, 2, 2, 4, 4, 0]],
+        [1, [1, 0, 0, 0, 0, 0, 0]],
+        [2, [2, 0, 0, 0, 0, 0, 0]],
+        [3, [3, 0, 0, 0, 0, 0, 0]],
+        [4, [4, 0, 0, 0, 0, 0, 0]],
+        [5, [0, 1, 0, 0, 0, 0, 0]],
+        [449, [4, 2, 0, 4, 2, 0, 1]],
+        [-1, [4, 2, 0, 4, 2, 0, 1]],
+        [-2, [3, 2, 0, 4, 2, 0, 1]],
     ]
 )
 def index_multimodal_get_layer_index_list_test_case(request):
@@ -129,6 +129,7 @@ def test_layer_num_list_multimodal(index_multimodal_get_layer_index_list_test_ca
     m.append([100, 200])
     g = Generator(m)
     assert len(g._node_type_layers) == 7
+    print(g._get_layer_index_list(input, g._node_type_layers))
     assert g._get_layer_index_list(input, g._node_type_layers) == expected
 
 @pytest.mark.xfail
@@ -206,7 +207,7 @@ def test_multi_modal2_index_access_2():
     m = m + m1
     m.append([100])
     g = Generator(m)
-    assert g[3] == [[100, None], [1000, None], [10000, None], [100000, 1], [4000000, 10], [DummyConcat], [100]]
+    assert g[3] == [[None, 100], [None, 1000], [None, 10000], [4, 100000], [10, 1000000], ['concat'], [100]]
 
 def test_multi_modal2_index_access_3():
     m = MultiHeadLinkedListLayer()
@@ -227,7 +228,9 @@ def test_multi_modal2_index_access_3():
     m = m + m2
     m.append([11, 13, 15])
     g = Generator(m)
-    assert g[3] == [[100, None], [1000, None], [10000, None], [100000, 1], [4000000, 10], [DummyConcat], [100]]
+    print(g[3])
+    assert g[3] == [[None, 100, None], [None, 1000, None], [None, 10000, None], [4, 100000, None], [10, 1000000, 0.1], ['concat', 0.01], [100, 0.001], ['concat'], [11]]
+
 
 def test_multimodal_network_graph_dump_1():
     m1 = MultiHeadLinkedListLayer()
@@ -248,22 +251,22 @@ def test_multimodal_network_graph_dump_1():
     graph, (adj, features) = g[0]
     assert adj.shape == (num_nodes, num_nodes)
     assert features.shape == (num_nodes, num_features)
-    expected_features = np.array([
-        [0, 0, 0, 32, 0],
-        [0, 0, 0, 0, 32],
-        [1, 0, 0, 0, 0],
-        [0, 0, 0, 0, 32],
-        [0, 32, 0, 0, 0],
-        [0, 0, 0, 32, 0],
-        [0, 0, 32, 0, 0],
-        [0, 32, 0, 0, 0]])
+    print(adj, features)
+    expected_features = np.array([[0., 32., 0., 0., 0.],
+                                  [0., 0., 32., 0., 0.],
+                                  [0., 0., 0., 32., 0.],
+                                  [0., 0., 0., 0., 32.],
+                                  [0., 32., 0., 0., 0.],
+                                  [1., 0., 0., 0., 0.],
+                                  [0., 0., 0., 0., 32.],
+                                  [0., 0., 0., 32., 0.]])
 
     expected_adj = np.array([[0., 1., 0., 0., 0., 0., 0., 0.],
                              [1., 0., 1., 0., 0., 0., 0., 0.],
-                             [0., 1., 0., 1., 1., 0., 0., 0.],
-                             [0., 0., 1., 0., 0., 0., 0., 0.],
+                             [0., 1., 0., 1., 0., 0., 0., 0.],
                              [0., 0., 1., 0., 0., 1., 0., 0.],
-                             [0., 0., 0., 0., 1., 0., 1., 0.],
+                             [0., 0., 0., 0., 0., 1., 0., 0.],
+                             [0., 0., 0., 1., 1., 0., 1., 0.],
                              [0., 0., 0., 0., 0., 1., 0., 1.],
                              [0., 0., 0., 0., 0., 0., 1., 0.]])
     np.testing.assert_array_equal(features, expected_features)
@@ -288,30 +291,34 @@ def test_multimodal_network_graph_dump_2():
     m.append_lazy(Hoge3, [dict(units=i) for i in [32, 64, 128]]); num_nodes += 1
 
     g = Generator(m, dump_nn_graph=True)
-    g.draw_graph("/home/ono/Dropbox/test.png")
     graph, (adj, features) = g[0]
     assert adj.shape == (num_nodes, num_nodes)
     assert features.shape == (num_nodes, num_features)
     print(adj)
     print(features)
-    expected_features = np.array([
-        [0, 0, 0, 32, 0],
-        [0, 0, 0, 0, 32],
-        [1, 0, 0, 0, 0],
-        [0, 0, 0, 0, 32],
-        [0, 32, 0, 0, 0],
-        [0, 0, 0, 32, 0],
-        [0, 0, 32, 0, 0],
-        [0, 32, 0, 0, 0]])
+    expected_features = np.array([[0., 32., 0., 0., 0.],
+                                  [0., 0., 32., 0., 0.],
+                                  [0., 0., 0., 32., 0.],
+                                  [0., 0., 0., 0., 32.],
+                                  [0., 32., 0., 0., 0.],
+                                  [0., 32., 0., 0., 0.],
+                                  [0., 0., 32., 0., 0.],
+                                  [0., 0., 0., 32., 0.],
+                                  [1., 0., 0., 0., 0.],
+                                  [0., 0., 0., 0., 32.],
+                                  [0., 0., 0., 32., 0.]])
 
-    expected_adj = np.array([[0., 1., 0., 0., 0., 0., 0., 0.],
-                             [1., 0., 1., 0., 0., 0., 0., 0.],
-                             [0., 1., 0., 1., 1., 0., 0., 0.],
-                             [0., 0., 1., 0., 0., 0., 0., 0.],
-                             [0., 0., 1., 0., 0., 1., 0., 0.],
-                             [0., 0., 0., 0., 1., 0., 1., 0.],
-                             [0., 0., 0., 0., 0., 1., 0., 1.],
-                             [0., 0., 0., 0., 0., 0., 1., 0.]])
+    expected_adj = np.array([[0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                             [1., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
+                             [0., 1., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
+                             [0., 0., 1., 0., 1., 0., 0., 0., 0., 0., 0.],
+                             [0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 1., 0., 1., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 1., 0., 1., 0., 0.],
+                             [0., 0., 0., 0., 1., 0., 0., 1., 0., 1., 0.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 1.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.]])
     np.testing.assert_array_equal(features, expected_features)
     np.testing.assert_array_equal(adj, expected_adj)
 
