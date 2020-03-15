@@ -45,6 +45,16 @@ def test_lazylayer_property():
     assert c.child is None
     assert p.child is None
 
+def test_empty_concat_case():
+    m1 = MultiHeadLinkedListLayer()
+    m1.append([1, 2, 3, 4, 5])
+    m1.append([6, 7, 8])
+    m1.append([10])
+    m2 = MultiHeadLinkedListLayer()
+    m1.append([10, 20, 30, 40, 50])
+    m1.append([60, 70, 80])
+    m = m1 + m2
+    m.append([100, 200])
 
 def test_two_haed_linked_list_layer_depth():
     m = MultiHeadLinkedListLayer()
@@ -54,8 +64,8 @@ def test_two_haed_linked_list_layer_depth():
     nodelist = list(range(len(m.graph.nodes)))
     adj = nx.to_numpy_matrix(m.graph, nodelist=nodelist)
     expected_adj = np.array([[0., 1., 0.],
-                             [1., 0., 1.],
-                             [0., 1., 0.]])
+                             [0., 0., 1.],
+                             [0., 0., 0.]])
     np.testing.assert_array_equal(adj, expected_adj)
     print(adj)
     assert len(m) == 3
@@ -82,8 +92,8 @@ def test_two_haed_linked_list_lazylayer_depth():
     nodelist = list(range(len(m.graph.nodes)))
     adj = nx.to_numpy_matrix(m.graph, nodelist=nodelist)
     expected_adj = np.array([[0., 1., 0.],
-                             [1., 0., 1.],
-                             [0., 1., 0.]])
+                             [0., 0., 1.],
+                             [0., 0., 0.]])
     np.testing.assert_array_equal(adj, expected_adj)
     print(adj)
     assert len(m) == 3
@@ -104,13 +114,13 @@ def test_two_modal_multi_haed_linked_list_lazylayer_depth():
     nodelist = list(range(len(m.graph.nodes)))
     adj = nx.to_numpy_matrix(m.graph, nodelist=nodelist)
     expected_adj = np.array([[0., 1., 0., 0., 0., 0., 0., 0.,],
-                             [1., 0., 1., 0., 0., 0., 0., 0.,],
-                             [0., 1., 0., 0., 0., 0., 1., 0.,],
+                             [0., 0., 1., 0., 0., 0., 0., 0.,],
+                             [0., 0., 0., 0., 0., 0., 1., 0.,],
                              [0., 0., 0., 0., 1., 0., 0., 0.,],
-                             [0., 0., 0., 1., 0., 1., 0., 0.,],
-                             [0., 0., 0., 0., 1., 0., 1., 0.,],
-                             [0., 0., 1., 0., 0., 1., 0., 1.,],
-                             [0., 0., 0., 0., 0., 0., 1., 0.,]])
+                             [0., 0., 0., 0., 0., 1., 0., 0.,],
+                             [0., 0., 0., 0., 0., 0., 1., 0.,],
+                             [0., 0., 0., 0., 0., 0., 0., 1.,],
+                             [0., 0., 0., 0., 0., 0., 0., 0.,]])
     np.testing.assert_array_equal(adj, expected_adj)
     assert len(m) == 5
 
@@ -133,15 +143,15 @@ def test_three_modal_multi_haed_linked_list_lazylayer_depth_2():
     nodelist = list(range(len(m.graph.nodes)))
     adj = nx.to_numpy_matrix(m.graph, nodelist=nodelist)
     expected_adj = np.array([[0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
-                             [1., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
                              [0., 0., 0., 1., 0., 0., 0., 0., 0., 0.],
-                             [0., 0., 1., 0., 1., 0., 0., 0., 0., 0.],
-                             [0., 0., 0., 1., 0., 1., 0., 0., 0., 0.],
-                             [0., 1., 0., 0., 1., 0., 1., 0., 0., 0.],
-                             [0., 0., 0., 0., 0., 1., 0., 1., 0., 0.],
-                             [0., 0., 0., 0., 0., 0., 1., 0., 1., 0.],
-                             [0., 0., 0., 0., 0., 0., 0., 1., 0., 1.],
-                             [0., 0., 0., 0., 0., 0., 0., 0., 1., 0.]])
+                             [0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 1., 0.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]])
     np.testing.assert_array_equal(adj, expected_adj)
 
 
@@ -167,14 +177,14 @@ def test_three_modal_multi_haed_linked_list_lazylayer_depth_2():
     adj = nx.to_numpy_matrix(m.graph, nodelist=nodelist)
     expected_adj = np.array([[0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
                              [0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-                             [0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
                              [0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
-                             [0., 0., 0., 1., 0., 1., 0., 0., 0., 0., 0., 0.],
-                             [0., 0., 0., 0., 1., 0., 1., 0., 0., 0., 0., 0.],
-                             [0., 0., 1., 0., 0., 1., 0., 1., 0., 0., 0., 0.],
-                             [1., 0., 0., 0., 0., 0., 1., 0., 1., 0., 0., 0.],
-                             [0., 0., 0., 0., 0., 0., 0., 1., 0., 1., 0., 0.],
-                             [0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 1., 0.],
-                             [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 1.],
-                             [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.]])
+                             [0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
+                             [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]])
     np.testing.assert_array_equal(adj, expected_adj)

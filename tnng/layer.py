@@ -77,14 +77,14 @@ class MultiHeadLinkedListLayer:
         self.depth = depth
         self.klass_set = set()
         if graph is None:
-            self._graph = nx.Graph()
+            self._graph = nx.DiGraph()
         else:
             self._graph = graph
 
     def _set_immutable(self):
         self._immutable = True
 
-    def _add_node(self, attr: list = []) -> nx.Graph:
+    def _add_node(self, attr: list = []) -> nx.DiGraph:
         n_node = len(self.graph.nodes())
         if attr is not None:
             if len(attr) == 1:
@@ -141,17 +141,22 @@ class MultiHeadLinkedListLayer:
         graph = self._concat_graph(other)
         return MultiHeadLinkedListLayer(concat_layer, _depth, graph)
 
-    def _concat_graph(self, other) -> nx.Graph:
+    def _concat_graph(self, other) -> nx.DiGraph:
         n_graph_nodes = len(self.graph.nodes())
         n_other_nodes = len(other.graph.nodes())
+        if n_other_nodes == 0:
+            return self.graph
+        elif n_graph_nodes == 0:
+            return other.graph
+
         _n_node = n_graph_nodes + n_other_nodes
         nth_concat_node = _n_node
         relabeled_dict = {idx: label for idx, label in enumerate(range(n_graph_nodes, _n_node))}
         other_graph = nx.relabel_nodes(other.graph, relabeled_dict)
         graph = nx.compose(self.graph, other_graph)
-        graph.add_node(nth_concat_node)
+        graph.add_node(nth_concat_node, args=[['concat',],])
         graph.add_edge(n_graph_nodes-1, nth_concat_node)
-        graph.add_edge(max(relabeled_dict.values()), nth_concat_node)
+        graph.add_edge(max(list(relabeled_dict.values())), nth_concat_node)
 
         if graph.has_edge(n_graph_nodes-1, min(relabeled_dict.values())):
             graph.remove_edge(n_graph_nodes-1, min(relabeled_dict.values()))
